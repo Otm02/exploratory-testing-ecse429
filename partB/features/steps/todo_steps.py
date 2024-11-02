@@ -1,27 +1,11 @@
 from behave import given, when, then
 import requests
 import re
-from features.steps.utils import get_todo_by_title, delete_all_todos
+from features.steps.utils import get_todo_by_title, get_all_todos, reset_database_to_default, get_all_projects, get_all_categories
 
 BASE_URL = 'http://localhost:4567'
 
-# Helper functions
-def get_todo_by_title(title):
-    response = requests.get(f'{BASE_URL}/todos', params={'title': title})
-    if response.status_code == 200:
-        todos = response.json().get('todos', [])
-        return todos[0] if todos else None
-    return None
 
-def delete_all_todos():
-    response = requests.get(f'{BASE_URL}/todos')
-    if response.status_code == 200:
-        todos = response.json().get('todos', [])
-        for todo in todos:
-            todo_id = todo.get('id')
-            requests.delete(f'{BASE_URL}/todos/{todo_id}')
-
-# Step Definitions
 @given('the todo list application is running')
 def step_impl(context):
     try:
@@ -30,9 +14,12 @@ def step_impl(context):
     except requests.exceptions.RequestException as e:
         assert False, f"Service is not running: {e}"
 
-@given('the todo list is empty')
+@given('the database contains the default todo objects')
 def step_impl(context):
-    delete_all_todos()
+    reset_database_to_default()
+    context.default_todos = get_all_todos()
+    context.default_projects = get_all_projects()
+    context.default_categories = get_all_categories()
 
 @given('a todo item with title "{title}" exists')
 def step_impl(context, title):
@@ -47,16 +34,16 @@ def step_impl(context, title):
     payload = {'title': title}
     context.response = requests.post(f'{BASE_URL}/todos', json=payload)
 
-@when('I create a new todo with title "{title}" and description "{description}"')
-def step_impl(context, title, description):
-    payload = {'title': title, 'description': description}
-    context.response = requests.post(f'{BASE_URL}/todos', json=payload)
-
 @then('the todo item should be created with only title "{title}"')
 def step_impl(context, title):
     assert context.response.status_code == 201, f"Expected status code 201, got {context.response.status_code}"
     todo = context.response.json()
     assert todo.get('title') == title, f"Expected title '{title}', got '{todo.get('title')}'"
+
+@when('I create a new todo with title "{title}" and description "{description}"')
+def step_impl(context, title, description):
+    payload = {'title': title, 'description': description}
+    context.response = requests.post(f'{BASE_URL}/todos', json=payload)
 
 @then('the todo item should be created with title "{title}" and description "{description}"')
 def step_impl(context, title, description):

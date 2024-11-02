@@ -3,7 +3,7 @@ Feature: Create a new todo item
 
   Background:
     Given the todo list application is running
-    And the todo list is empty
+    And the database contains the default todo objects
 
   Scenario Outline: Create a new todo item with a valid title
     When I create a new todo with only title "<title>"

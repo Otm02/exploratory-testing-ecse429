@@ -3,7 +3,7 @@ Feature: Associate a project with a todo item
 
   Background:
     Given the todo list application is running
-    And the todo list is empty
+    And the database contains the default todo objects
     And a todo item with title "Buy groceries" exists
     And a project with title "Shopping" exists
 
