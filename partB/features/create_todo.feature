@@ -15,11 +15,21 @@ Feature: Create a new todo item
       | Call Mom      |
       | Finish report |
 
-  Scenario: Create a new todo item with title and description
-    When I create a new todo with title "Read book" and description "Read 'Clean Code' by Robert C. Martin"
-    Then the todo item should be created with title "Read book" and description "Read 'Clean Code' by Robert C. Martin"
+  Scenario Outline: Create a new todo item with title and description
+    When I create a new todo with title "<title>" and description "<description>"
+    Then the todo item should be created with title "<title>" and description "<description>"
 
-  Scenario: Fail to create a new todo item without a title
+    Examples:
+      | title      | description                            |
+      | Read book  | Read 'Clean Code' by Robert C. Martin  |
+      | Write blog | Write a post about BDD with Gherkin    |
+      | Plan trip  | Plan itinerary for the summer vacation |
+
+  Scenario Outline: Fail to create a new todo item without a title
     When I attempt to create a new todo without a title
     Then the todo item should not be created
-    And I should receive an error message indicating the title is required
+    And I should receive an error message "<error_message>" indicating the title field is mandatory
+
+    Examples:
+      | error_message              |
+      | title : field is mandatory |

@@ -61,11 +61,11 @@ def step_impl(context):
 def step_impl(context):
     assert context.response.status_code in [400, 500], f"Expected error status code, got {context.response.status_code}"
 
-@then('I should receive an error message indicating the title is required')
-def step_impl(context):
+@then('I should receive an error message "{error_message}" indicating the title field is mandatory')
+def step_impl(context, error_message):
     assert 'errorMessages' in context.response.json(), "Expected error messages in response"
     error_messages = context.response.json()['errorMessages']
-    expected_error = 'title : field is mandatory'
+    expected_error = error_message
     assert expected_error in error_messages, f"Expected error message '{expected_error}', got '{error_messages}'"
 
 @when('I update the description of the todo item with title "{title}" to "{description}"')
@@ -132,7 +132,7 @@ def step_impl(context, todo_id):
     context.response = requests.delete(f'{BASE_URL}/todos/{todo_id}')
     context.todo_id = todo_id
 
-@given('the todo item "{todo_title}" is associated with the project "{project_title}" and category "{category_title}"')
+@given('the todo item with title "{todo_title}" is associated with the project "{project_title}" and category "{category_title}"')
 def step_impl(context, todo_title, project_title, category_title):
     # Create project
     payload = {'title': project_title}
