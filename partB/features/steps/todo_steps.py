@@ -9,7 +9,7 @@ BASE_URL = 'http://localhost:4567'
 @given('the todo list application is running')
 def step_impl(context):
     try:
-        response = requests.get(f'{BASE_URL}/todos')
+        response = requests.get(f'{BASE_URL}')
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
         assert False, f"Service is not running: {e}"
@@ -28,6 +28,13 @@ def step_impl(context, title):
     assert response.status_code == 201, f"Failed to create todo item with title '{title}'"
     todo = response.json()
     context.todo_id = todo['id']
+    add_to_todos_dict(context, title, todo['id'])
+
+def add_to_todos_dict(context, key, value):
+    if not hasattr(context, 'todosDict') or context.todosDict is None:
+        context.todosDict = {}
+    
+    context.todosDict[key] = value
 
 @when('I create a new todo with only title "{title}"')
 def step_impl(context, title):
@@ -59,7 +66,7 @@ def step_impl(context):
 
 @then('the todo item should not be created')
 def step_impl(context):
-    assert context.response.status_code in [400, 500], f"Expected error status code, got {context.response.status_code}"
+    assert context.response.status_code == 400, f"Expected error status code, got {context.response.status_code}"
 
 @then('I should receive an error message "{error_message}" indicating the title field is mandatory')
 def step_impl(context, error_message):
@@ -170,3 +177,15 @@ def step_impl(context):
     # Check categories
     response = requests.get(f'{BASE_URL}/todos/{todo_id}/categories')
     assert response.status_code == 404, "Expected 404 since todo should be deleted"
+
+@when('I have todo items with titles "{todo1}" "{todo2}" "{todo3}"')
+def step_impl(context, todo1, todo2, todo3):
+    context.todo_ids = []
+    for todo in [todo1, todo2, todo3]:
+        data = {"title": todo}
+        response = requests.post(f"{BASE_URL}/todos", json=data)
+        assert response.status_code == 201, f"Failed to create todo '{todo}'"
+        todo = response.json()
+        todo_id = todo.get('id')
+        context.todo_ids.append(todo_id)
+        

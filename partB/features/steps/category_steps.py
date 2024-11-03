@@ -18,6 +18,18 @@ def step_impl(context, title):
     assert response.status_code == 201, f"Failed to create category with title '{title}'"
     category = response.json()
     context.category_id = category['id']
+    add_to_category_dict(context, title, category.get('id'))
+
+def add_to_category_dict(context, key, value):
+    if not hasattr(context, 'categoryDict') or context.categoryDict is None:
+        context.categoryDict = {}
+    
+    context.categoryDict[key] = value
+
+@given('I have categories with titles "{category1}" "{category2}"')
+def step_impl(context, category1, category2):
+    for category_title in [category1, category2]:
+        context.execute_steps(f'''Given I create a category with title "{category_title}"''')
 
 @when('I associate the category "{category_title}" with the todo item "{todo_title}"')
 def step_impl(context, category_title, todo_title):
@@ -64,5 +76,16 @@ def step_impl(context, category_id, todo_title):
 
 @then('I should receive an error message indicating the category does not exist')
 def step_impl(context):
-    assert context.response.status_code in [404, 400], f"Expected error status code, got {context.response.status_code}"
+    assert context.response.status_code == 404, f"Expected error status code, got {context.response.status_code}"
     assert 'errorMessages' in context.response.json(), "Expected error messages in response"
+
+@when('I have categories with titles "{category1}" "{category2}" "{category3}"')
+def step_impl(context, category1, category2, category3):
+    context.category_ids = []
+    for category_title in [category1, category2, category3]:
+        data = {"title": category_title}
+        response = requests.post(f"{BASE_URL}/categories", json=data)
+        assert response.status_code == 201, f"Failed to create category '{category_title}'"
+        category = response.json()
+        category_id = category.get('id')
+        context.category_ids.append(category_id)
