@@ -1,6 +1,5 @@
 from behave import given, when, then
 import requests
-import re
 from features.steps.utils import get_todo_by_title, get_all_todos, reset_database_to_default, get_all_projects, get_all_categories
 
 BASE_URL = 'http://localhost:4567'
@@ -21,6 +20,7 @@ def step_impl(context):
     context.default_projects = get_all_projects()
     context.default_categories = get_all_categories()
 
+@when('a todo item with title "{title}" exists')
 @given('a todo item with title "{title}" exists')
 def step_impl(context, title):
     payload = {'title': title}
@@ -178,14 +178,12 @@ def step_impl(context):
     response = requests.get(f'{BASE_URL}/todos/{todo_id}/categories')
     assert response.status_code == 404, "Expected 404 since todo should be deleted"
 
-@when('I have todo items with titles "{todo1}" "{todo2}" "{todo3}"')
+@when('todo items with titles "{todo1}" "{todo2}" "{todo3}" exist and are associated to project')
 def step_impl(context, todo1, todo2, todo3):
     context.todo_ids = []
     for todo in [todo1, todo2, todo3]:
-        data = {"title": todo}
-        response = requests.post(f"{BASE_URL}/todos", json=data)
-        assert response.status_code == 201, f"Failed to create todo '{todo}'"
-        todo = response.json()
-        todo_id = todo.get('id')
-        context.todo_ids.append(todo_id)
+        context.execute_steps(f'''
+            Given a todo item with title "{todo}" exists
+            When I add the todo to the project
+        ''')
         

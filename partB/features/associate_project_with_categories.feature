@@ -5,11 +5,11 @@ Feature: Manage Project Categories
 
   Background:
     Given the todo list application is running
-  And the database contains the default todo objects
+    And the database contains the default todo objects
 
   Scenario Outline: Successfully add a category to a project
-    Given a project with title "{project_title}" exists
-    Given a category with title "<category_title>" exists
+    Given a project with title "<project_title>" exists
+    And a category with title "<category_title>" exists
     When I add the category to the project
     Then the project should contain the category
 
@@ -20,7 +20,7 @@ Feature: Manage Project Categories
       | Project C     | Category 3     |
 
   Scenario Outline: Successfully add multiple categories to a project
-    Given a project with title "{project_title}" exists
+    Given a project with title "<project_title>" exists
     When I have categories with titles "<category1>" "<category2>" "<category3>"
     And I add the categories to the project
     Then the project should contain the categories
@@ -31,7 +31,7 @@ Feature: Manage Project Categories
       | Project Y     |
 
   Scenario Outline: Fail to add a non-existing category to a project
-    Given a project with title "{project_title}" exists
+    Given a project with title "<project_title>" exists
     When I attempt to add a non-existing category with id "<category_id>" to the project
     Then the response should contain an error message indicating the category does not exist
 

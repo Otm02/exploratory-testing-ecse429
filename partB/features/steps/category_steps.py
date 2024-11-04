@@ -11,6 +11,7 @@ def get_category_by_title(title):
         return categories[0] if categories else None
     return None
 
+@when('a category with title "{title}" exists')
 @given('a category with title "{title}" exists')
 def step_impl(context, title):
     payload = {'title': title}

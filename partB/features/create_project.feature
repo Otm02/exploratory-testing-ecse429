@@ -1,7 +1,5 @@
 Feature: Create a New Project
-  As a user
-  I want to create a new project
-  So that I can organize my tasks under this project
+  As a user, I want to create a new project, so that I can organize my tasks under this project
 
   Background:
     Given the todo list application is running
@@ -19,7 +17,7 @@ Feature: Create a New Project
       | Title 4     | false     | true   | Description 4  |
 
   Scenario Outline: Create a project without optional fields
-    given a project with title "<title>" exists
+    Given a project with title "<title>" exists
     Then the project should be created with "<title>"
     
     Examples:

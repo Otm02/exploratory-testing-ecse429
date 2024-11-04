@@ -180,19 +180,13 @@ def step_impl(context, todo1, todo2):
         todo_id = context.todosDict[todo_title]
         assert todo_id not in todo_ids_in_project, f"Todo {todo_id} should not be in project's tasks"
 
+@given('I add the todo to the project')
 @when('I add the todo to the project')
 def step_impl(context):
     data = {"id": context.todo_id}
     response = requests.post(f"{BASE_URL}/projects/{context.project_id}/tasks", json=data)
     context.response = response
     assert response.status_code == 201, f"Failed to add todo to project"
-
-@when('I add the todos to the project')
-def step_impl(context):
-    for todo_id in context.todo_ids:
-        data = {"id": todo_id}
-        response = requests.post(f"{BASE_URL}/projects/{context.project_id}/tasks", json=data)
-        assert response.status_code == 201, f"Failed to add todo {todo_id} to project"
 
 @when('I attempt to add a non-existing todo with id "{todo_id}" to the project')
 def step_impl(context, todo_id):
@@ -225,6 +219,7 @@ def step_impl(context):
     actual_message = error_messages[0]
     assert "Could not find thing matching value for id" == actual_message, f"Unexpected error message: {actual_message}"
 
+@given('I add the category to the project')
 @when('I add the category to the project')
 def step_impl(context):
     data = {"id": context.category_id}
