@@ -1,4 +1,4 @@
-Feature: Modify Project-Todo Associations
+Feature: Update Project-Todo Associations
   As a user, I want to modify existing associations between projects and todos, so that I can update how tasks are organized within projects
 
   Background:

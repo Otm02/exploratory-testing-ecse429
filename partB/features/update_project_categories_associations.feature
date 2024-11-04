@@ -1,4 +1,4 @@
-Feature: Modify Project-Category Associations
+Feature: Update Project Category Associations
   As a user, I want to modify existing associations between projects and categories, so that I can update how categories are organized within projects
 
   Background:

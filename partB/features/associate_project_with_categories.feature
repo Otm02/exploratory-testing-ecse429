@@ -1,7 +1,5 @@
-Feature: Manage Project Categories
-  As a user
-  I want to manage categories within a project
-  So that I can organize categories under specific projects
+Feature: Associate Project With Categories
+  As a user, I want to manage categories within a project, so that I can organize categories under specific projects
 
   Background:
     Given the todo list application is running

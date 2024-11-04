@@ -1,4 +1,4 @@
-Feature: Manage Project Tasks
+Feature: Associate Project With Tasks
   As a user, I want to manage tasks within a project, so that I can organize tasks under specific projects
 
   Background:
