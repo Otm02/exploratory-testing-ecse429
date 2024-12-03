@@ -1,0 +1,6 @@
+projectKey=thingifier-1.5.5
+serverUrl=http://localhost:9000
+serverVersion=10.7.0.96327
+dashboardUrl=http://localhost:9000/dashboard?id=thingifier-1.5.5
+ceTaskId=04409251-1e4a-40ce-a06c-ae022c5726d4
+ceTaskUrl=http://localhost:9000/api/ce/task?id=04409251-1e4a-40ce-a06c-ae022c5726d4
