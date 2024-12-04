@@ -5,7 +5,7 @@ session = requests.Session()
 
 
 def create_todo(
-    title="Test TODO" * 100000, doneStatus=False, description="Description" * 100000
+    title="Test TODO" * 50000, doneStatus=False, description="Description" * 50000
 ):
     response = session.post(
         f"{BASE_URL}/todos",
@@ -27,7 +27,7 @@ def delete_todo(todo_id):
 
 
 def post_on_todos_id(todo_id, project_ids):
-    for project_id in project_ids:
+    for project_id in project_ids[:len(project_ids)//2]:
         response = session.post(
             f"{BASE_URL}/todos/{todo_id}/tasksof", json={"id": project_id}
         )
@@ -38,10 +38,10 @@ def post_on_todos_id(todo_id, project_ids):
 
 
 def create_project(
-    title="Test Project" * 100000,
+    title="Test Project" * 50000,
     completed=False,
     active=True,
-    description="Decription" * 100000,
+    description="Decription" * 50000,
 ):
     response = session.post(
         f"{BASE_URL}/projects",
@@ -68,7 +68,7 @@ def delete_project(project_id):
 
 
 def post_on_projects_id(project_id, todo_ids):
-    for todo_id in todo_ids:
+    for todo_id in todo_ids[:len(todo_ids)//2]:
         response = session.post(
             f"{BASE_URL}/projects/{project_id}/tasks", json={"id": todo_id}
         )

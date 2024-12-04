@@ -8,6 +8,9 @@ import json
 import matplotlib.pyplot as plt
 import subprocess
 import numpy as np
+from queue import Queue
+from collections import deque
+from datetime import datetime
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, parent_dir)
@@ -40,62 +43,85 @@ def stop_server(process):
 
 
 class ResourceMonitor(threading.Thread):
-    def __init__(self, process):
+    def __init__(self, process, sample_interval=0.1):
         super().__init__()
         self.process = psutil.Process(process.pid)
-        self.cpu_samples = []
-        self.mem_samples = []
+        self.sample_interval = sample_interval
+        self.cpu_samples = deque()
+        self.mem_samples = deque()
         self.running = False
+        self.sample_queue = Queue()
+        self.last_cpu_times = {}
+        self.daemon = True
 
     def run(self):
         self.running = True
         while self.running:
             try:
-                cpu_percent = (
-                    self.process.cpu_percent(interval=None) / psutil.cpu_count()
-                )
-                memory_usage = self.process.memory_info().rss / (1024 * 1024)
-
-                for child in self.process.children(recursive=True):
-                    try:
-                        cpu_percent += (
-                            child.cpu_percent(interval=None) / psutil.cpu_count()
-                        )
-                        memory_usage += child.memory_info().rss / (1024 * 1024)
-                    except (psutil.NoSuchProcess, psutil.AccessDenied):
-                        continue
-
-                self.cpu_samples.append(cpu_percent)
-                self.mem_samples.append(memory_usage)
-
+                self._collect_sample()
+                time.sleep(self.sample_interval)
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 break
 
-            time.sleep(0.1)
+        self._process_queue_samples()
+
+    def _collect_sample(self):
+        try:
+            processes = [self.process] + self.process.children(recursive=True)
+            cpu_total = 0
+            memory_total = 0
+
+            for proc in processes:
+                try:
+                    cpu_times = proc.cpu_times()
+                    proc_id = proc.pid
+                    
+                    if proc_id in self.last_cpu_times:
+                        last_times = self.last_cpu_times[proc_id]
+                        cpu_percent = (
+                            ((cpu_times.user - last_times.user) + 
+                             (cpu_times.system - last_times.system)) * 100 /
+                            self.sample_interval
+                        )
+                        cpu_total += cpu_percent / psutil.cpu_count()
+                    
+                    self.last_cpu_times[proc_id] = cpu_times
+                    memory_total += proc.memory_info().rss / (1024 * 1024)
+
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+
+            self.sample_queue.put((cpu_total, memory_total))
+
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            return
+
+    def _process_queue_samples(self):
+        while not self.sample_queue.empty():
+            cpu, mem = self.sample_queue.get()
+            self.cpu_samples.append(cpu)
+            self.mem_samples.append(mem)
 
     def stop(self):
         self.running = False
+        self.join()
+        self._process_queue_samples()
 
     def get_metrics(self):
         if not self.cpu_samples or not self.mem_samples:
             return 0, 0
 
-        avg_cpu = get_trimmed_mean(self)
+        avg_cpu = self._get_filtered_mean()
         avg_mem = sum(self.mem_samples) / len(self.mem_samples)
 
         return avg_cpu, avg_mem
 
+    def _get_filtered_mean(self):
+        if not self.cpu_samples:
+            return 0
 
-def get_trimmed_mean(self, lower_percentile=10, upper_percentile=90):
-    if not self.cpu_samples:
-        return 0
-
-    sorted_samples = sorted(self.cpu_samples)
-    lower_idx = int(len(sorted_samples) * (lower_percentile / 100))
-    upper_idx = int(len(sorted_samples) * (upper_percentile / 100))
-
-    trimmed_samples = sorted_samples[lower_idx:upper_idx]
-    return sum(trimmed_samples) / len(trimmed_samples) if trimmed_samples else 0
+        non_zero_samples = [sample for sample in self.cpu_samples if sample > 0]
+        return sum(non_zero_samples) / len(non_zero_samples) if non_zero_samples else 0
 
 
 def measure_operation(server_process, operation, operation_name):
@@ -108,7 +134,6 @@ def measure_operation(server_process, operation, operation_name):
     duration = time.time() - start_time
 
     monitor.stop()
-    monitor.join()
     cpu_usage, mem_usage = monitor.get_metrics()
     print(f"Completed operation: {operation_name} in {duration:.2f} seconds")
     return result, duration, cpu_usage, mem_usage
@@ -171,12 +196,13 @@ def perform_test_sequence(max_objects):
             )
 
         print("\n=== Starting deletion phase ===")
-        for i, (project_id, todo_id) in enumerate(
-            reversed(list(zip(projects, todos))), 1
-        ):
+        for i, (project_id, todo_id) in enumerate(list(zip(projects, todos))):
+            def delete_todo():
+                util.delete_todo(todo_id)
+    
             _, duration, cpu, mem = measure_operation(
                 server_process,
-                lambda: util.delete_todo(todo_id),
+                delete_todo,
                 f"Deleting Todo {max_objects - i + 1}",
             )
             results["operations"].append(
@@ -188,10 +214,13 @@ def perform_test_sequence(max_objects):
                     "mem": mem,
                 }
             )
+            
+            def delete_project():
+                util.delete_project(project_id)
 
             _, duration, cpu, mem = measure_operation(
                 server_process,
-                lambda: util.delete_project(project_id),
+                delete_project,
                 f"Deleting Project {max_objects - i + 1}",
             )
             results["operations"].append(
@@ -273,7 +302,7 @@ def plot_results(results):
 
 
 if __name__ == "__main__":
-    results = perform_test_sequence(500)
+    results = perform_test_sequence(1000)
     plot_results(results)
     with open("performance_results.json", "w") as f:
         json.dump(results, f, indent=2)
